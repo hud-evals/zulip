@@ -3,7 +3,7 @@ from collections import defaultdict
 from collections.abc import Set as AbstractSet
 from dataclasses import dataclass
 from operator import itemgetter
-from typing import Any
+from typing import Any, Literal
 
 from django.db.models import Q, QuerySet
 
@@ -313,3 +313,90 @@ def get_subscriptions_for_send_message(
         )
     )
     return query
+
+
+def get_user_subscribed_streams(user_profile: UserProfile) -> QuerySet[Stream]:
+    """
+    Returns the streams a user is actively subscribed to.
+
+    TODO: Implement this function to return the QuerySet of Stream objects
+    that the given user_profile is subscribed to.
+    """
+    raise NotImplementedError
+
+
+def update_all_subscriber_counts_for_user(
+    user_profile: UserProfile, direction: Literal[1, -1]
+) -> None:
+    """
+    Increment/Decrement subscriber_count for all streams the user is subscribed to.
+
+    This should be called when a user is activated (direction=1) or
+    deactivated (direction=-1) to update all their subscribed streams' counts.
+
+    direction -> 1=increment, -1=decrement
+
+    TODO: Implement this function to update Stream.subscriber_count
+    for all streams the user is subscribed to.
+    """
+    raise NotImplementedError
+
+
+def bulk_update_subscriber_counts(
+    direction: Literal[1, -1],
+    streams: dict[int, set[int]],
+) -> None:
+    """
+    Bulk increment/decrement subscriber_count for multiple streams.
+
+    Args:
+        direction: 1 to increment, -1 to decrement
+        streams: dict mapping stream_id -> set of user_ids being added/removed
+
+    The count change for each stream should be len(user_ids) * direction.
+
+    TODO: Implement this function to efficiently update Stream.subscriber_count
+    for multiple streams in a single database operation.
+    """
+    raise NotImplementedError
+
+
+def create_stream_subscription(
+    user_profile: UserProfile,
+    recipient: Recipient,
+    stream: Stream,
+    color: str = Subscription.DEFAULT_STREAM_COLOR,
+) -> None:
+    """
+    Creates a single stream Subscription object and updates subscriber_count.
+
+    This should:
+    1. Create the Subscription object
+    2. If user is active, increment stream.subscriber_count by 1
+
+    Both operations should happen in the same transaction.
+
+    TODO: Implement this function.
+    """
+    raise NotImplementedError
+
+
+def bulk_create_stream_subscriptions(
+    subs: list[Subscription], streams: dict[int, set[int]]
+) -> None:
+    """
+    Bulk create subscriptions for streams and update subscriber_counts.
+
+    Args:
+        subs: list of Subscription objects to create
+        streams: dict mapping stream_id -> set of active user_ids being subscribed
+
+    This should:
+    1. Bulk create all the Subscription objects
+    2. Update subscriber_count for each stream based on the number of active users
+
+    Both operations should happen in the same transaction.
+
+    TODO: Implement this function.
+    """
+    raise NotImplementedError
