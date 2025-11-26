@@ -37,11 +37,11 @@ async function test_stream_subscriber_add_button_tooltip(page: Page): Promise<vo
     await page.waitForSelector(stream_selector, {visible: true});
     await page.click(stream_selector);
 
-    // Wait for the stream settings to load and navigate to subscribers
-    await page.waitForSelector(".stream_section", {visible: true});
+    // Wait for the stream settings to load
+    await page.waitForSelector(".stream_settings_header", {visible: true});
 
     // Click on the Subscribers tab
-    const subscribers_tab_selector = ".settings-sticky-header [data-tab='subscribers']";
+    const subscribers_tab_selector = ".tab-switcher .ind-tab[data-tab-key='subscribers']";
     await page.waitForSelector(subscribers_tab_selector, {visible: true});
     await page.click(subscribers_tab_selector);
 
