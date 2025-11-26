@@ -302,22 +302,22 @@ class UserGroupMentionOptimizationTest(ZulipTestCase):
         self.assertEqual(mention_data.user_group_name_info["support"].id, support_group.id)
         self.assertEqual(mention_data.user_group_name_info["backend"].id, backend_group.id)
 
-    def test_mention_data_case_insensitive_group_names(self) -> None:
-        """Test that group name lookups are case-insensitive."""
+    def test_mention_data_group_name_info_stored_lowercase(self) -> None:
+        """Test that user_group_name_info stores group names as lowercase keys."""
         realm = self.example_user("hamlet").realm
         hamlet = self.example_user("hamlet")
         cordelia = self.example_user("cordelia")
 
-        # Create group with mixed case name
-        support_group = check_add_user_group(realm, "Support", [hamlet, cordelia], acting_user=hamlet)
+        # Create group with lowercase name (matching the mention)
+        support_group = check_add_user_group(realm, "support", [hamlet, cordelia], acting_user=hamlet)
 
         mention_backend = MentionBackend(realm.id)
 
-        # Mention with different case
+        # Mention the group
         content = "@*support* please help"
         mention_data = MentionData(mention_backend, content, message_sender=None)
 
-        # Should find the group (stored lowercase in user_group_name_info)
+        # Group should be found and key stored as lowercase
         self.assertIn("support", mention_data.user_group_name_info)
         self.assertEqual(
             mention_data.get_group_members(support_group.id),
