@@ -105,6 +105,20 @@ export function get_email_from_item(item: UserPill): string {
     return item.email;
 }
 
+// TODO: Implement
+export function create_item_from_user_id(
+    user_id: string,
+    current_items: CombinedPill[],
+    pill_config?: InputPillConfig,
+): UserPill | undefined {
+    return undefined;
+}
+
+// TODO: Implement
+export function get_unique_full_name_from_item(item: UserPill): string {
+    return "";
+}
+
 export function append_person(
     opts: {
         person: User;

@@ -1479,6 +1479,16 @@ export function is_duplicate_full_name(full_name: string): boolean {
     return ids !== undefined && ids.size > 1;
 }
 
+// TODO: Implement
+export function get_from_unique_full_name(query: string): User | undefined {
+    return undefined;
+}
+
+// TODO: Implement
+export function get_unique_full_name(full_name: string, user_id: number): string {
+    return "";
+}
+
 export function get_mention_syntax(full_name: string, user_id?: number, silent = false): string {
     let mention = "";
     if (silent) {
