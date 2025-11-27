@@ -46,7 +46,7 @@ mock_esm("../src/loading");
 mock_esm("../src/markdown");
 mock_esm("../src/narrow_state");
 mock_esm("../src/rendered_markdown");
-mock_esm("../src/resize");
+const resize = mock_esm("../src/resize");
 mock_esm("../src/sent_messages");
 mock_esm("../src/server_events_state");
 mock_esm("../src/transmit");
@@ -77,7 +77,7 @@ let lookup_called_with_force = false;
 let input_focused = false;
 
 // Mock composebox_typeahead with the exported private_message_recipient_typeahead
-const composebox_typeahead = mock_esm("../src/composebox_typeahead", {
+mock_esm("../src/composebox_typeahead", {
     private_message_recipient_typeahead: {
         lookup(hideOnEmpty, force_lookup) {
             if (hideOnEmpty === false && force_lookup === true) {
@@ -87,12 +87,16 @@ const composebox_typeahead = mock_esm("../src/composebox_typeahead", {
     },
 });
 
-// Set up state_data
+// Set up state_data and realm
 const {set_realm} = zrequire("state_data");
-set_realm(make_realm({realm_topics_policy: "allow_empty_topic"}));
+const realm = make_realm({realm_topics_policy: "allow_empty_topic"});
+set_realm(realm);
 
 const {initialize_user_settings} = zrequire("user_settings");
 initialize_user_settings({user_settings: {}});
+
+// Import compose_setup after mocks are set up
+const compose_setup = zrequire("compose_setup");
 
 function reset_test_state() {
     lookup_called_with_force = false;
@@ -140,7 +144,6 @@ function setup_dom_elements() {
     $(".can_send_direct_messages_group_based_warning");
     $("#stream_message_recipient_topic");
     $(".recipient_box_clear_topic_button");
-    $("input#stream_message_recipient_topic");
     $(".empty-topic-display");
     $(".message-content-container");
     $("#sending-indicator");
@@ -177,12 +180,12 @@ function setup_dom_elements() {
     $(".compose_control_button_container .add-new-todo-list").on = noop;
     $("#compose-content").on = noop;
     $("#sending-indicator").hide = noop;
-    
+
     // Set up the DM recipient button and its parent
-    const $compose_direct_recipient = $("#compose-direct-recipient");
+    $("#compose-direct-recipient");
     const $private_message_recipient = $("#private_message_recipient");
-    
-    // Mock the focus method to track if input was focused
+
+    // Mock the trigger method to track if input was focused
     $private_message_recipient.trigger = function (event) {
         if (event === "focus") {
             input_focused = true;
@@ -191,15 +194,24 @@ function setup_dom_elements() {
     };
 }
 
-run_test("dm recipient button click triggers typeahead lookup", () => {
+function initialize_handlers({override}) {
+    // Override realm settings required by compose_setup.initialize()
+    override(realm, "realm_available_video_chat_providers", {disabled: {id: 0}});
+    override(realm, "realm_video_chat_provider", 0);
+    // Override resize.watch_manual_resize which is called during initialize()
+    override(resize, "watch_manual_resize", noop);
+    // Override window.to_$ to avoid issues with window event handlers
+    override(window, "to_$", () => $("window-stub"));
+
+    compose_setup.initialize();
+}
+
+run_test("dm recipient button click triggers typeahead lookup", ({override}) => {
     reset_test_state();
     setup_dom_elements();
 
-    // Get the compose_setup module
-    const compose_setup = zrequire("compose_setup");
-
-    // Initialize compose_setup which registers all event handlers
-    compose_setup.initialize();
+    // Initialize compose_setup with proper overrides
+    initialize_handlers({override});
 
     // Get the click handler for the DM recipient button
     // The handler is registered as: $("#compose-direct-recipient").on("click", "#compose-new-direct-recipient-button", ...)
@@ -230,12 +242,12 @@ run_test("dm recipient button click triggers typeahead lookup", () => {
     );
 });
 
-run_test("dm recipient button click calls preventDefault and stopPropagation", () => {
+run_test("dm recipient button click calls preventDefault and stopPropagation", ({override}) => {
     reset_test_state();
     setup_dom_elements();
 
-    const compose_setup = zrequire("compose_setup");
-    compose_setup.initialize();
+    // Initialize compose_setup with proper overrides
+    initialize_handlers({override});
 
     const click_handler = $("#compose-direct-recipient").get_on_handler(
         "click",
@@ -259,4 +271,3 @@ run_test("dm recipient button click calls preventDefault and stopPropagation", (
     assert.ok(prevent_default_called, "preventDefault should be called");
     assert.ok(stop_propagation_called, "stopPropagation should be called");
 });
-
