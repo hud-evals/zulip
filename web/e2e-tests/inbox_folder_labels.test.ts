@@ -21,17 +21,23 @@ async function pin_channel_to_top(page: Page, stream_name: string): Promise<void
     const stream_id = await common.get_stream_id(page, stream_name);
     assert.ok(stream_id !== undefined, `Stream ${stream_name} not found`);
 
-    // Find and right-click on the stream in the left sidebar
+    // Find the stream row in the left sidebar
     const stream_selector = `.narrow-filter[data-stream-id="${stream_id}"]`;
     await page.waitForSelector(stream_selector, {visible: true});
-    await page.click(stream_selector, {button: "right"});
+
+    // Hover over the stream row to make the menu icon visible
+    await page.hover(stream_selector);
+
+    // Click on the stream sidebar menu icon to open the popover
+    const menu_icon_selector = `${stream_selector} .stream-sidebar-menu-icon`;
+    await page.waitForSelector(menu_icon_selector, {visible: true});
+    await page.click(menu_icon_selector);
 
     // Wait for the popover menu
     await page.waitForSelector("#stream-actions-menu-popover", {visible: true});
 
     // Click "Pin channel to top"
-    const pin_selector =
-        '#stream-actions-menu-popover [data-popover-menu-item-action="pin_to_top"]';
+    const pin_selector = "#stream-actions-menu-popover .pin_to_top";
     await page.waitForSelector(pin_selector, {visible: true});
     await page.click(pin_selector);
 
