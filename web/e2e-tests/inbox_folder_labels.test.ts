@@ -10,7 +10,8 @@ import * as common from "./lib/common.ts";
 
 async function navigate_to_inbox(page: Page): Promise<void> {
     console.log("Navigating to inbox");
-    const inbox_selector = ".top_left_inbox";
+    // Use specific selector to target the expanded navigation list (not the condensed view)
+    const inbox_selector = "#left-sidebar-navigation-list .top_left_inbox";
     await page.waitForSelector(inbox_selector, {visible: true});
     await page.click(inbox_selector);
     await page.waitForSelector("#inbox-main", {visible: true});
