@@ -128,9 +128,13 @@ const members = make_user_group({
 
 user_groups.initialize({realm_user_groups: [nobody, everyone, admin, moderators, members]});
 
+// Track send button disabled state via assertion mock
+let send_button_disabled = false;
+
 // Helper function to set up compose box DOM elements
 function setup_compose_dom() {
     $.clear_all_elements();
+    send_button_disabled = false;
 
     $("textarea#compose-textarea").val("test message content");
 
@@ -140,7 +144,13 @@ function setup_compose_dom() {
     };
     $("#compose-send-button").trigger("focus");
     $("#compose-send-button .loader").hide();
-    $("#compose-send-button").toggleClass = noop;
+
+    // Use assertion mock to track send button disabled state
+    $("#compose-send-button").toggleClass = (classname, value) => {
+        if (classname === "disabled-message-send-controls") {
+            send_button_disabled = value;
+        }
+    };
 
     const $pm_pill_container = $.create("fake-pm-pill-container");
     $("#private_message_recipient")[0] = {};
@@ -228,7 +238,7 @@ test_ui(
 
         // Verify send button is disabled
         assert.ok(
-            $("#compose-send-button").hasClass("disabled-message-send-controls"),
+            send_button_disabled,
             "Send button should be disabled when user lacks posting permission",
         );
     },
@@ -278,7 +288,7 @@ test_ui("channel_permission_banner_cleared_when_permitted", ({mock_template, ove
 
     // Verify send button is NOT disabled (for posting permission reasons)
     assert.ok(
-        !$("#compose-send-button").hasClass("disabled-message-send-controls"),
+        !send_button_disabled,
         "Send button should not be disabled when user has posting permission",
     );
 });
@@ -320,7 +330,7 @@ test_ui("dm_permission_banner_shown_after_validation", ({mock_template, override
 
     // Verify send button is disabled
     assert.ok(
-        $("#compose-send-button").hasClass("disabled-message-send-controls"),
+        send_button_disabled,
         "Send button should be disabled when user cannot send DMs",
     );
 });
@@ -359,7 +369,7 @@ test_ui("dm_permission_banner_not_shown_when_permitted", ({mock_template, overri
 
     // Verify send button is NOT disabled
     assert.ok(
-        !$("#compose-send-button").hasClass("disabled-message-send-controls"),
+        !send_button_disabled,
         "Send button should not be disabled when user can send DMs",
     );
 });
@@ -455,20 +465,18 @@ test_ui("send_button_state_matches_validation", ({mock_template, override}) => {
     compose_state.topic("test");
 
     // Clear any previous state
-    $("#compose-send-button").removeClass("disabled-message-send-controls");
+    send_button_disabled = false;
     banner_shown = false;
 
     // Call the function
     compose_validate.validate_and_update_send_button_status();
 
     // Both should indicate user cannot send
-    const button_disabled = $("#compose-send-button").hasClass("disabled-message-send-controls");
-
     assert.ok(
-        button_disabled === banner_shown,
+        send_button_disabled === banner_shown,
         "Send button disabled state should match whether banner is shown",
     );
-    assert.ok(button_disabled, "Send button should be disabled for restricted stream");
+    assert.ok(send_button_disabled, "Send button should be disabled for restricted stream");
     assert.ok(banner_shown, "Banner should be shown for restricted stream");
 });
 
