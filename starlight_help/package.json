@@ -13,7 +13,7 @@
   "dependencies": {
     "@astrojs/starlight": "^0.36.0",
     "@iconify-json/fa": "^1.2.1",
-    "astro": "^5.1.2",
+    "astro": "^5.15.9",
     "astro-compressor": "^1.1.2",
     "hast-util-from-html": "^2.0.3",
     "hast-util-to-html": "^9.0.5",
