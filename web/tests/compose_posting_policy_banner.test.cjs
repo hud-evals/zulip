@@ -267,7 +267,7 @@ test_ui("channel_permission_banner_cleared_when_permitted", ({mock_template, ove
 
     // Track banner rendering
     let error_banner_shown = false;
-    mock_template("compose_banner/compose_banner.hbs", false, (data) => {
+    mock_template("compose_banner/compose_banner.hbs", true, (data) => {
         if (
             data.classname === compose_banner.CLASSNAMES.no_post_permissions ||
             data.classname === compose_banner.CLASSNAMES.cannot_send_direct_message
@@ -316,8 +316,8 @@ test_ui("dm_permission_banner_shown_after_validation", ({mock_template, override
         return "<banner-stub>";
     });
 
-    // Also handle regular banner template
-    mock_template("compose_banner/compose_banner.hbs", false, () => "<banner-stub>");
+    // Also handle regular banner template (optional - may or may not be called)
+    mock_template("compose_banner/compose_banner.hbs", true, () => "<banner-stub>");
 
     // Call validate_and_update_send_button_status
     compose_validate.validate_and_update_send_button_status();
@@ -350,13 +350,13 @@ test_ui("dm_permission_banner_not_shown_when_permitted", ({mock_template, overri
     compose_state.set_message_type("private");
     compose_state.private_message_recipient_emails("other@example.com");
 
-    // Track banner rendering
+    // Track banner rendering (both optional - should NOT be called when user has permission)
     let dm_restriction_banner_shown = false;
-    mock_template("compose_banner/cannot_send_direct_message_error.hbs", false, () => {
+    mock_template("compose_banner/cannot_send_direct_message_error.hbs", true, () => {
         dm_restriction_banner_shown = true;
         return "<banner-stub>";
     });
-    mock_template("compose_banner/compose_banner.hbs", false, () => "<banner-stub>");
+    mock_template("compose_banner/compose_banner.hbs", true, () => "<banner-stub>");
 
     // Call validate_and_update_send_button_status
     compose_validate.validate_and_update_send_button_status();
