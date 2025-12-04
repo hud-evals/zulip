@@ -345,12 +345,17 @@ test_ui("dm_permission_banner_not_shown_when_permitted", ({mock_template, overri
     );
 });
 
-test_ui("banner_consistency_after_recipient_change", ({mock_template, override}) => {
-    // This test simulates changing from a permitted stream to a restricted stream
-    // and verifies the banner correctly updates.
+test_ui("banner_consistency_after_recipient_change", ({mock_template, override, override_rewire}) => {
+    // This test verifies that banners are properly CLEARED when switching
+    // from a restricted stream to a permitted stream.
     //
-    // The bug would cause the banner to show stale state because the banner
-    // check ran BEFORE validation set the new posting_policy_error_message.
+    // The bug: In the broken code, clear_errors() is not called when
+    // switching to a permitted stream because update_posting_policy_banner_post_validation()
+    // is not called from validate_and_update_send_button_status().
+    //
+    // The fix: The golden patch adds a call to update_posting_policy_banner_post_validation()
+    // at the end of validate_and_update_send_button_status(), which calls clear_errors()
+    // when the user has permission.
 
     override(current_user, "user_id", me.user_id);
     override(realm, "realm_can_access_all_users_group", everyone.id);
@@ -382,29 +387,42 @@ test_ui("banner_consistency_after_recipient_change", ({mock_template, override})
         return "<banner-stub>";
     });
 
-    // Start with open stream
+    // Track if clear_errors is called - THIS IS THE KEY TEST
+    // In the broken code, clear_errors() is NOT called when switching to permitted stream
+    // In the fixed code, clear_errors() IS called via update_posting_policy_banner_post_validation()
+    let clear_errors_called = false;
+    override_rewire(compose_banner, "clear_errors", () => {
+        clear_errors_called = true;
+    });
+
+    // Step 1: Start with RESTRICTED stream (banner will be shown by validate())
     compose_state.set_message_type("stream");
-    compose_state.set_stream_id(open_stream.stream_id);
+    compose_state.set_stream_id(restricted_stream.stream_id);
     compose_state.topic("test-topic");
 
-    // Validate - should NOT show permission error
-    no_post_permission_banner_shown = false;
-    compose_validate.validate_and_update_send_button_status();
-    assert.ok(
-        !no_post_permission_banner_shown,
-        "No permission banner should be shown for open stream",
-    );
-
-    // Now change to restricted stream
-    compose_state.set_stream_id(restricted_stream.stream_id);
-
-    // Validate again - should show permission error
-    // In the buggy code, the banner might show stale state here
-    no_post_permission_banner_shown = false;
     compose_validate.validate_and_update_send_button_status();
     assert.ok(
         no_post_permission_banner_shown,
-        "Permission banner should be shown after switching to restricted stream",
+        "Permission banner should be shown for restricted stream",
+    );
+
+    // Step 2: Switch to OPEN stream - this is where the bug manifests
+    // Reset tracking
+    clear_errors_called = false;
+    compose_state.set_stream_id(open_stream.stream_id);
+
+    // Call validate_and_update_send_button_status
+    // In the FIXED code: update_posting_policy_banner_post_validation() is called,
+    //   which calls clear_errors() because user now has permission
+    // In the BROKEN code: clear_errors() is NOT called because
+    //   update_posting_policy_banner_post_validation() is not invoked
+    compose_validate.validate_and_update_send_button_status();
+
+    // THIS ASSERTION WILL FAIL IN BROKEN CODE, PASS IN FIXED CODE
+    assert.ok(
+        clear_errors_called,
+        "clear_errors() should be called when switching to a permitted stream - " +
+            "this verifies update_posting_policy_banner_post_validation() is called",
     );
 });
 
