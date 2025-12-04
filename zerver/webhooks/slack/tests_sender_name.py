@@ -23,8 +23,8 @@ from zerver.lib.test_classes import WebhookTestCase
 
 # Test constants - using DISTINCT values for name vs real_name
 # This is critical for catching the bug where the wrong field is used
-SLACK_USERNAME = "slack_username_handle"  # The Slack username/handle (wrong field)
-DISPLAY_NAME = "Alice Sender"  # The display name (correct field)
+SLACK_USERNAME = "supersecretemail"  # The Slack username/handle (wrong field)
+DISPLAY_NAME = "John Doe"  # The display name (correct field)
 CHANNEL_NAME = "general"
 
 EXPECTED_TOPIC = "Message from Slack"
@@ -41,8 +41,8 @@ def mock_slack_api(
 
     The mock returns user data with DIFFERENT values for 'name' and 'real_name'
     to distinguish between correct and incorrect implementations:
-    - name: "slack_username_handle" (the Slack username)
-    - real_name: "Alice Sender" (the display name)
+    - name: "supersecretemail" (the Slack username)
+    - real_name: "John Doe" (the display name)
     """
 
     @wraps(test_func)
@@ -73,8 +73,8 @@ class SlackSenderNameTests(WebhookTestCase):
     sender attribution.
 
     The Slack API provides multiple name fields:
-    - name: The Slack username/handle (e.g., "slack_username_handle")
-    - real_name: The user's display name (e.g., "Alice Sender")
+    - name: The Slack username/handle (e.g., "supersecretemail")
+    - real_name: The user's display name (e.g., "John Doe")
 
     Messages should show the display name, not the username.
     """
@@ -93,8 +93,8 @@ class SlackSenderNameTests(WebhookTestCase):
         Test that message sender attribution uses the user's display name
         (real_name field) rather than their Slack username (name field).
 
-        Expected: **Alice Sender**: Hello, this is a normal text message
-        Bug would show: **slack_username_handle**: Hello, this is a normal text message
+        Expected: **John Doe**: Hello, this is a normal text message
+        Bug would show: **supersecretemail**: Hello, this is a normal text message
         """
         message_text = "Hello, this is a normal text message"
         expected_message = EXPECTED_MESSAGE_TEMPLATE.format(
@@ -115,8 +115,8 @@ class SlackSenderNameTests(WebhookTestCase):
         When a Slack message contains @mentions like <@U12345>, they should
         be converted to @**Display Name**, not @**username**.
 
-        Expected: @**Alice Sender** @**Alice Sender** @**Alice Sender** hello...
-        Bug would show: @**slack_username_handle** @**slack_username_handle**...
+        Expected: @**John Doe** @**John Doe** @**John Doe** hello...
+        Bug would show: @**supersecretemail** @**supersecretemail**...
         """
         message_text = (
             f"@**{DISPLAY_NAME}** @**{DISPLAY_NAME}** @**{DISPLAY_NAME}** "
