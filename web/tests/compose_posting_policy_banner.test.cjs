@@ -345,7 +345,7 @@ test_ui("dm_permission_banner_not_shown_when_permitted", ({mock_template, overri
     );
 });
 
-test_ui("banner_consistency_after_recipient_change", ({mock_template, override, override_rewire}) => {
+test_ui("banner_consistency_after_recipient_change", ({mock_template, override}) => {
     // This test verifies that banners are properly CLEARED when switching
     // from a restricted stream to a permitted stream.
     //
@@ -387,13 +387,14 @@ test_ui("banner_consistency_after_recipient_change", ({mock_template, override, 
         return "<banner-stub>";
     });
 
-    // Track if clear_errors is called - THIS IS THE KEY TEST
+    // Track if clear_errors is called by monitoring DOM removal
+    // clear_errors() calls: $(`#compose_banners .error`).remove()
     // In the broken code, clear_errors() is NOT called when switching to permitted stream
     // In the fixed code, clear_errors() IS called via update_posting_policy_banner_post_validation()
-    let clear_errors_called = false;
-    override_rewire(compose_banner, "clear_errors", () => {
-        clear_errors_called = true;
-    });
+    let error_banner_removed = false;
+    $("#compose_banners .error").remove = () => {
+        error_banner_removed = true;
+    };
 
     // Step 1: Start with RESTRICTED stream (banner will be shown by validate())
     compose_state.set_message_type("stream");
@@ -408,7 +409,7 @@ test_ui("banner_consistency_after_recipient_change", ({mock_template, override, 
 
     // Step 2: Switch to OPEN stream - this is where the bug manifests
     // Reset tracking
-    clear_errors_called = false;
+    error_banner_removed = false;
     compose_state.set_stream_id(open_stream.stream_id);
 
     // Call validate_and_update_send_button_status
@@ -420,8 +421,8 @@ test_ui("banner_consistency_after_recipient_change", ({mock_template, override, 
 
     // THIS ASSERTION WILL FAIL IN BROKEN CODE, PASS IN FIXED CODE
     assert.ok(
-        clear_errors_called,
-        "clear_errors() should be called when switching to a permitted stream - " +
+        error_banner_removed,
+        "Error banners should be cleared when switching to a permitted stream - " +
             "this verifies update_posting_policy_banner_post_validation() is called",
     );
 });
